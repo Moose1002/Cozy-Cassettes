@@ -1,0 +1,23 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/cassette_player_wind.wav-c7f1f805e186d5479bb0a7166f53f70d.sample"
+
+[deps]
+
+source_file="res://mods/Moose1002.CozyCassettes/Sounds/cassette_player_wind.wav"
+dest_files=[ "res://.import/cassette_player_wind.wav-c7f1f805e186d5479bb0a7166f53f70d.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=true
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=2
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=0

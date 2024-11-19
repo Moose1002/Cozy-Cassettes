@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/cassette_player_play.mp3-916b7ad0d9c68afb026a8a142b5689b8.mp3str"
+
+[deps]
+
+source_file="res://mods/Moose1002.CozyCassettes/Sounds/cassette_player_play.mp3"
+dest_files=[ "res://.import/cassette_player_play.mp3-916b7ad0d9c68afb026a8a142b5689b8.mp3str" ]
+
+[params]
+
+loop=false
+loop_offset=0
