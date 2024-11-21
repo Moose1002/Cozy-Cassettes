@@ -1,3 +1,4 @@
+## The GitHub is a little outdated! Will update soon!
 # Cozy Cassettes
 ### Adds easy to make, user created, cassette style playlists to WEBFISHING!
 
