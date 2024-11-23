@@ -1,5 +1,6 @@
 # Cozy Cassettes
 ### Adds easy to make, user created, cassette style playlists to WEBFISHING!
+### When updating please backup your "Cassettes" folder as some mod-loaders will delete it!
 
 ## Cassette Playlists
 The vanilla boombox is pretty lame, but with Cozy Cassettes you can create your own playlists to be played, in the form of old analog style cassettes!
