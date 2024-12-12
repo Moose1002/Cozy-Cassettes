@@ -15,6 +15,7 @@ The vanilla boombox is pretty lame, but with Cozy Cassettes you can create your 
 * Realistic cassette player controls!
 * Client side or server side if you send others your created cassette playlists!
 * Cassette tape skins/colors!
+* Custom cassette textures!
 * Cool SFX!
 * Digital cassettes with more modern day features like instant song skipping, current song labels, etc!
 * YouTube support? (PotatoRadio already does that well, might look into if requested though)! [COMING MAYBE?]
@@ -32,6 +33,7 @@ The vanilla boombox is pretty lame, but with Cozy Cassettes you can create your 
 ## Customizing Cassette Tapes
 After launching the game at least once after you've made a new folder for a cassette, a tape.json file will be created allowing you to further customize your tapes!
 * name: Whatever you'd like the tape to be displayed as to others, and in the cassette player. This can be named whatever, symbols are fine here! This will default to the folder name on creation.
+* description: Whatever you'd like the tooltip/description of the cassette tape to be. This will default to the description of the currently selected design.
 * design: The design you'd like your cassette to have. See "Design Values" for values to put here.
 * type: "analog" or "digital" - Changes between an analog or a digital cassette. Digital cassettes have more modern features.
 
@@ -44,7 +46,13 @@ In order as shown:
 * Brand: "max1", "max2"
 * Special: "digital", "og", "pride", "weezer"
   
-![V1 1](https://github.com/user-attachments/assets/0653559b-a2d3-482b-ae9b-348f5364a5cf)
+![image](https://github.com/user-attachments/assets/0653559b-a2d3-482b-ae9b-348f5364a5cf)
+
+## Custom Tapes
+If you want to further customize your tapes you can make custom tape designs!
+To make a custom tape design create a 64x64 png named "tape.png" and put it in the cassette folder with all of your songs. It'll automatically be detected and override the current design on launch!
+
+![image](https://github.com/user-attachments/assets/429568b7-29e3-4539-8602-81d954663a2c)
 
 ## Save Game Note
 I have not had any issues with my save games in my testing, but to be safe, when adding/removing cassettes, make a backup!
