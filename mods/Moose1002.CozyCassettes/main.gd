@@ -1,6 +1,6 @@
 extends Node
 
-# Cozy Casettes v0.3.0 by Moose1002
+# Cozy Casettes v1.4.1 by Moose1002
 # Feel free to reach out to me if you have any questions or suggestions!
 # I'm happy to hear them!
 
