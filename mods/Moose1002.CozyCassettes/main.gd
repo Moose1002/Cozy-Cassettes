@@ -1,13 +1,26 @@
 extends Node
 
+# Cozy Casettes v0.3.0 by Moose1002
+# Feel free to reach out to me if you have any questions or suggestions!
+# I'm happy to hear them!
+
 const MOD_ID = "Moose1002.CozyCassettes"
+const PREFIX = "[CozyCassettes]: "
 #const CASSETTE_DIR = "res://mods/Moose1002.CozyCassettes/Cassettes/"
-var CASSETTE_DIR = OS.get_executable_path().get_base_dir() + "/GDWeave/mods/Moose1002.CozyCassettes/Cassettes/"
+var CASSETTE_DIR = OS.get_executable_path().get_base_dir() + "/Cassettes/"
+
+# TODO: Get .wav working
+const VALID_FILE_TYPES = ["mp3", "ogg", "png"]
+const TAPE_JSON_DICT = {
+	name = "",
+	description = "default",
+	design = "default",
+	type = "analog"
+}
 onready var Lure = get_node("/root/SulayreLure")
 
-var cassette_ids = []
-
-func get_cassette_dir(cassette_id: String):
+# Returns the path to the provided cassette's song directory
+func load_cassette_dir(cassette_id: String):
 	var dir = Directory.new()
 	dir.open(CASSETTE_DIR)
 	dir.list_dir_begin()
@@ -17,9 +30,9 @@ func get_cassette_dir(cassette_id: String):
 		if (dir_name.to_lower().replace(" ", "_") + "_tape" == cassette_id):
 			return CASSETTE_DIR + dir_name
 		dir_name = dir.get_next()
-	return false	
+	return ""	
 
-# Returns an array of all mp3 file paths in a directory
+# Returns an array of all song file paths in a directory
 func get_song_files(path: String):
 	var song_files = []
 	var dir = Directory.new()
@@ -29,54 +42,189 @@ func get_song_files(path: String):
 	
 	var song_file_name = dir.get_next()
 	while song_file_name != "":
-		if (song_file_name.begins_with(".") or song_file_name.ends_with(".import")):
+		if (song_file_name.begins_with(".") or song_file_name.ends_with(".import") or song_file_name == "tape.json"):
 			song_file_name = dir.get_next()	
 			continue
-		elif (not song_file_name.ends_with(".mp3")):
-			print("Invalid file type found: " + song_file_name)
+		elif (VALID_FILE_TYPES.find(song_file_name.get_extension()) == -1):
+			print(PREFIX + "Invalid file type found: " + song_file_name)
 			song_file_name = dir.get_next()	
 			continue
 		song_files.append(path + "/" + song_file_name)
 		song_file_name = dir.get_next()	
-	if (song_files.size() == 0):
-		print("No songs found in:" + path)
 	return song_files
 
+# Returns a readable string from the cassette id
+func format_cassette_id(cassette_id: String):
+	var formatted_cassetted_id = cassette_id.trim_suffix("_tape").capitalize()
+	return formatted_cassetted_id
+
+# This updates old json files that might be missing field.
+# This is just a failsafe and shouldn't be called more than once.
+func _update_json(cassette_id: String, cassette_tape_data: Dictionary):
+	print(PREFIX + "Old tape.json found, attemping update.")
+	
+	var json = File.new()
+	var json_dir = load_cassette_dir(cassette_id) + "/tape.json"
+	json.open(json_dir, File.WRITE)
+	
+	var json_dict = TAPE_JSON_DICT
+	json_dict["name"] = cassette_tape_data["name"]
+	json_dict["description"] = "default"
+	json_dict["design"] = cassette_tape_data["design"]
+	json_dict["type"] = cassette_tape_data["type"]
+	
+	json.store_string(JSON.print(json_dict, "\t"))
+	json.close()
+	
+	return json_dict
+
+# Process the tape.json data for the provided cassette tape
+# If tape.json exists returns the tape's data dictionary
+# If tape.json doesn't exist creates it
+func load_cassette_json(cassette_id: String):
+	var json = File.new()
+	var json_dir = load_cassette_dir(cassette_id) + "/tape.json"
+	
+	# If the file already exists read and return the data
+	if (json.file_exists(json_dir)):	
+		json.open(json_dir, File.READ)
+		var cassette_tape_data = JSON.parse(json.get_as_text()).result	
+		json.close()
+		
+		if (typeof(cassette_tape_data) == TYPE_DICTIONARY):
+			if (!cassette_tape_data.has("description")):
+				pass
+			return cassette_tape_data
+	# Else make the file
+	else:
+		print(PREFIX + "tape.json not found for " + cassette_id + ". Creating it!")
+		json.open(json_dir, File.WRITE)
+		var json_dict = TAPE_JSON_DICT
+		
+		json_dict["name"] = format_cassette_id(cassette_id)
+		json.store_string(JSON.print(json_dict, "\t"))
+		json.close()
+		return json_dict
+
+# UNUSED - Potential update feature
+# Patches the radio bus to add effects to create a more cassette like sound
 func patch_cassette_audiobus():
-	# Piggyback off of the pre-existing "Radio" audio bus
 	var audioBusID = AudioServer.get_bus_index("Radio")
 	# Add cassette like audio effects
 	var cassetteEffect = AudioEffectFilter.new()
-	cassetteEffect.cutoff_hz = 250
+	cassetteEffect.cutoff_hz = 250 # Low pass test
 	AudioServer.add_bus_effect(audioBusID, cassetteEffect)
 
+# Matches the cassette_id to it's tape resource file
+func _get_cassette_tape_resource(cassette_data):
+	
+	# TODO: Reafactor this to not use a switch statement and instead just use the path
+	# Don't feel like doing it rn
+	match cassette_data["design"]:
+		"default":
+			if (cassette_data["type"] == "digital"):
+				return "mod://Tapes/Resources/digital_tape.tres" 
+			return "mod://Tapes/Resources/tape_red.tres"
+		# Basic Colors
+		"red":
+			return "mod://Tapes/Resources/tape_red.tres"
+		"black":
+			return "mod://Tapes/Resources/tape_black.tres"
+		"green":
+			return "mod://Tapes/Resources/tape_green.tres"	
+		"pink":
+			return "mod://Tapes/Resources/tape_pink.tres"
+		"yellow":
+			return "mod://Tapes/Resources/tape_yellow.tres"
+		# Solid Colors
+		"solid_pink":
+			return "mod://Tapes/Resources/tape_solid_pink.tres"
+		"solid_red":
+			return "mod://Tapes/Resources/tape_solid_red.tres"	
+		"solid_white":
+			return "mod://Tapes/Resources/tape_solid_white.tres"	
+		"solid_yellow":
+			return "mod://Tapes/Resources/tape_solid_yellow.tres"		
+		# Brand Knockoffs
+		"max":
+			return "mod://Tapes/Resources/tape_max.tres"
+		"max2":
+			return "mod://Tapes/Resources/tape_max2.tres"
+		# Special
+		"digital":
+			return "mod://Tapes/Resources/digital_tape.tres"
+		"og":
+			return "mod://Tapes/Resources/tape_og.tres"		
+		"pride":
+			return "mod://Tapes/Resources/tape_pride.tres"
+		"weezer":
+			return "mod://Tapes/Resources/tape_weezer.tres"	
+		_:
+			if (cassette_data["type"] == "digital"):
+				return "mod://Tapes/Resources/digital_tape.tres"
+			return "mod://Tapes/Resources/tape_red.tres"
+
+# Sets the provided cassette's texture to the one located at custom_texture
+func _set_custom_cassette_texture(cassette_id: String, custom_texture: String):
+	var texture = ImageTexture.new()
+	var image = Image.new()
+	image.load(custom_texture)
+	texture.create_from_image(image, 1)
+	# Can't set this to an Image directly so we create a ImageTexture
+	Globals.item_data[MOD_ID + "." + cassette_id]["file"].icon = texture
+
+# Build cassette items from the Cassettes folder
 func _build_cassettes():
-	print("Building cassettes items from Cassettes folder")
 	var dir = Directory.new()
 	dir.open(CASSETTE_DIR)
-	dir.list_dir_begin()
+	dir.list_dir_begin(true, true)
 	
 	var cassette_dir = dir.get_next()
 	# Iterate through created Cassette playlist folders
 	while cassette_dir != "":
-		if (cassette_dir.begins_with(".")):
-			cassette_dir = dir.get_next()
-			continue
-		var cassette_id = cassette_dir
-		cassette_id = cassette_id.to_lower().replace(" ", "_")
-		cassette_id = cassette_id + "_tape"
 		
-		print("Registering Cassette with ID: " + cassette_id)
-		Lure.add_content(MOD_ID, cassette_id, "mod://Items/Tapes/tape.tres", [Lure.FLAGS.FREE_UNLOCK])
-		cassette_ids.append(cassette_id)
+		var cassette_id = cassette_dir
+		cassette_id = cassette_id.to_lower().replace(" ", "_") + "_tape"
+	
+		# This calls to create tape.json if it doesn't already exist
+		var cassette_data = load_cassette_json(cassette_id)
+		# Update old jsons with new fields
+		if (!cassette_data.has("description")):
+			cassette_data = _update_json(cassette_id, cassette_data)
+		
+		var cassette_resource = _get_cassette_tape_resource(cassette_data)
+		var custom_resource = load_cassette_dir(cassette_id) + "/tape.png"
+		
+		## Register Cassette Tape ##
+		print(PREFIX + "Registering Cassette with ID: " + cassette_id)
+		Lure.add_content(MOD_ID, cassette_id, cassette_resource, [Lure.FLAGS.FREE_UNLOCK])
+		# Create a unique resource so we can save unique data to it
+		Globals.item_data[MOD_ID + "." + cassette_id]["file"] = Globals.item_data[MOD_ID + "." + cassette_id]["file"].duplicate()
+		
+		# Set name and descriptions to tapes
+		Globals.item_data[MOD_ID + "." + cassette_id]["file"].item_name = cassette_data["name"]
+		if (cassette_data["description"] != null and cassette_data["description"] != "default"):
+			Globals.item_data[MOD_ID + "." + cassette_id]["file"].item_description = cassette_data["description"]
+		
+		# If there's a tape.png then override the texture with the custom one
+		if (dir.file_exists(custom_resource)):
+			print(PREFIX + "Custom texture found for " + cassette_id + ", overriding texture.")
+			_set_custom_cassette_texture(cassette_id, custom_resource)
+			
 		cassette_dir = dir.get_next()
 
 func _ready():
+	var cassette_dir = Directory.new()
+	if (not cassette_dir.dir_exists(CASSETTE_DIR)):
+		print(PREFIX + "Cassette folder not found. Creating one!")
+		cassette_dir.make_dir(CASSETTE_DIR)
 	if Lure:
 		_build_cassettes()
-		Lure.add_content(MOD_ID, "prop_tape_boombox", "mod://Items/prop_tape_boombox.tres", [Lure.FLAGS.FREE_UNLOCK])
+		Lure.add_content(MOD_ID, "prop_tape_boombox", "mod://Scenes/prop_tape_boombox.tres", [Lure.FLAGS.FREE_UNLOCK])
 		Lure.add_actor(MOD_ID, "prop_tape_boombox", "mod://Scenes/prop_tape_boombox.tscn")
-
+	
+	print(PREFIX + "CozyCassettes Loaded!")
+	
 #GDScriptAudioImport v0.1
 
 #MIT License
@@ -120,9 +268,9 @@ func report_errors(err, filepath):
 		ERR_FILE_EOF: "File: End of file (EOF) error."
 	}
 	if err in result_hash:
-		print("Error: ", result_hash[err], " ", filepath)
+		print(PREFIX + "Error: ", result_hash[err], " ", filepath)
 	else:
-		print("Unknown error with file ", filepath, " error code: ", err)
+		print(PREFIX + "Unknown error with file ", filepath, " error code: ", err)
 
 func loadfile(filepath):
 	var file = File.new()
@@ -144,7 +292,7 @@ func loadfile(filepath):
 		var i = 0
 		while true:
 			if i >= len(bytes) - 4: # Failsafe, if there is no data bytes
-				print("Data byte not found")
+				print(PREFIX + "Data byte not found")
 				break
 				
 			var those4bytes = str(char(bytes[i])+char(bytes[i+1])+char(bytes[i+2])+char(bytes[i+3]))
@@ -259,7 +407,7 @@ func loadfile(filepath):
 # I don't wanna risk it always being slower on other files
 # And really, the solution would be to handle it in a low-level language
 func convert_to_16bit(data: PoolByteArray, from: int) -> PoolByteArray:
-	print("converting to 16-bit from %d" % from)
+	print(PREFIX + "converting to 16-bit from %d" % from)
 	var time = OS.get_ticks_msec()
 	# 24 bit .wav's are typically stored as integers
 	# so we just grab the 2 most significant bytes and ignore the other
@@ -283,7 +431,7 @@ func convert_to_16bit(data: PoolByteArray, from: int) -> PoolByteArray:
 			data[i/2] = value
 			data[i/2+1] = value >> 8
 		data.resize(data.size() / 2)
-	print("Took %f seconds for slow conversion" % ((OS.get_ticks_msec() - time) / 1000.0))
+	print(PREFIX + "Took %f seconds for slow conversion" % ((OS.get_ticks_msec() - time) / 1000.0))
 	return data
 
 

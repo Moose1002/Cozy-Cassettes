@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=2]
+[gd_scene load_steps=15 format=2]
 
 [ext_resource path="res://mods/Moose1002.CozyCassettes/UI/Icons/icon_eject.png" type="Texture" id=1]
 [ext_resource path="res://mods/Moose1002.CozyCassettes/UI/Icons/icon_ff.png" type="Texture" id=2]
@@ -11,11 +11,21 @@
 [ext_resource path="res://Scenes/HUD/inventory_item.tscn" type="PackedScene" id=9]
 [ext_resource path="res://mods/Moose1002.CozyCassettes/UI/panel_cassette_player.tres" type="StyleBox" id=10]
 [ext_resource path="res://Assets/Themes/button_tan_normal.tres" type="StyleBox" id=11]
+[ext_resource path="res://mods/Moose1002.CozyCassettes/UI/Icons/volume.png" type="Texture" id=12]
 
 [sub_resource type="DynamicFont" id=1]
 size = 40
 extra_spacing_char = 8
 font_data = ExtResource( 6 )
+
+[sub_resource type="StyleBoxFlat" id=2]
+bg_color = Color( 0.0980392, 0.0980392, 0.0980392, 1 )
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+expand_margin_top = 6.0
+expand_margin_bottom = 6.0
 
 [node name="cassette_player" type="Control"]
 anchor_left = 0.5
@@ -48,9 +58,9 @@ custom_styles/panel = ExtResource( 10 )
 
 [node name="item" parent="." instance=ExtResource( 9 )]
 anchor_left = 0.453
-anchor_top = 0.307
+anchor_top = 0.281937
 anchor_right = 0.545
-anchor_bottom = 0.533
+anchor_bottom = 0.507937
 margin_left = -0.105438
 margin_top = 0.00699615
 margin_right = 0.0584106
@@ -86,27 +96,43 @@ __meta__ = {
 }
 
 [node name="cassette_id" type="Label" parent="."]
-anchor_left = 0.312
-anchor_top = 0.05
+anchor_left = 0.311
+anchor_top = 0.058
 anchor_right = 0.688
-anchor_bottom = 0.135
-margin_left = -0.661774
-margin_top = 0.0499992
+anchor_bottom = 0.143
+margin_left = 0.314697
+margin_top = -0.142
 margin_right = 0.181763
-margin_bottom = 0.134998
+margin_bottom = -0.057003
 custom_colors/font_color = Color( 1, 1, 1, 1 )
 custom_constants/shadow_offset_x = 0
 text = "No Cassette Loaded"
 align = 1
 valign = 1
 
+[node name="song_title" type="Label" parent="."]
+anchor_left = 0.312
+anchor_top = 0.05
+anchor_right = 0.688
+anchor_bottom = 0.135
+margin_left = -250.662
+margin_top = 44.05
+margin_right = 250.182
+margin_bottom = 44.135
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_constants/shadow_offset_x = 0
+align = 1
+valign = 1
+clip_text = true
+
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 anchor_left = 0.05
-anchor_top = 0.7
+anchor_top = 0.573
 anchor_right = 0.95
-anchor_bottom = 0.9
-margin_top = 0.168976
-margin_bottom = 10.369
+anchor_bottom = 0.808
+margin_top = -0.158035
+margin_right = 6.10352e-05
+margin_bottom = 0.0769653
 custom_constants/separation = 32
 alignment = 1
 
@@ -182,6 +208,23 @@ text = "0000"
 align = 1
 valign = 1
 
+[node name="volume" type="HSlider" parent="."]
+anchor_left = 0.2
+anchor_top = 0.84
+anchor_right = 0.8
+anchor_bottom = 0.94
+margin_left = 1.52588e-05
+margin_top = -0.00997925
+margin_right = -0.231079
+margin_bottom = -0.0450439
+custom_icons/grabber_highlight = ExtResource( 12 )
+custom_icons/grabber = ExtResource( 12 )
+custom_styles/slider = SubResource( 2 )
+max_value = 1.4
+step = 0.001
+value = 0.7
+scrollable = false
+
 [connection signal="pressed" from="load_button" to="." method="_on_load_cassette_pressed"]
 [connection signal="pressed" from="close_button" to="." method="_on_close_button_pressed"]
 [connection signal="pressed" from="HBoxContainer/play_button" to="." method="_on_play_button_pressed"]
@@ -189,3 +232,4 @@ valign = 1
 [connection signal="pressed" from="HBoxContainer/fastforward_button" to="." method="_on_fastforward_button_pressed"]
 [connection signal="pressed" from="HBoxContainer/eject_button" to="." method="_on_eject_button_pressed"]
 [connection signal="pressed" from="HBoxContainer/stop_button" to="." method="_on_stop_button_pressed"]
+[connection signal="value_changed" from="volume" to="." method="_on_slider_slid"]
