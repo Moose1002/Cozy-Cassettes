@@ -18,7 +18,7 @@ The vanilla boombox is pretty lame, but with Cozy Cassettes you can create your 
 * Custom cassette textures!
 * Cool SFX!
 * Digital cassettes with more modern day features like instant song skipping, current song labels, etc!
-* YouTube support? (PotatoRadio already does that well, might look into if requested though)! [COMING MAYBE?]
+* YouTube support!! [NEWLY ADDED]
 
 ## Creating Cassette Tapes
 1. Navigate to the "Cassettes" folder located in your WEBFISHING game folder. (If the folder doesn't exist simply run the game once to create it).
@@ -53,6 +53,16 @@ If you want to further customize your tapes you can make custom tape designs!
 To make a custom tape design create a 64x64 png named "tape.png" and put it in the cassette folder with all of your songs. It'll automatically be detected and override the current design on launch!
 
 ![image](https://github.com/user-attachments/assets/429568b7-29e3-4539-8602-81d954663a2c)
+
+## YouTube Streaming
+If you'd like to listen to music with others without having to send them your cassette tape files then try the new FishTube cassette tape!
+Paste a YouTube url of a song (or playlist) and press PLAY/QUEUE to add your song to the queue.
+To remove a song from the queue that hasn't started playing yet simply right click the song in the queue!
+
+It should be noted that due to limitations with streaming, the title of the song cannot be fetched until the song has begun to play. I'm looking into this, I have a few ideas to address this.
+Also, only one cassette player can be streaming at once, starting your own YouTube stream will override the currently playing stream! This is another thing I have a few ideas to fix, which I will address later!
+
+![image](https://github.com/user-attachments/assets/a0d11ccd-9e8b-4f09-a211-06150bd7e9fa)
 
 ## Save Game Note
 I have not had any issues with my save games in my testing, but to be safe, when adding/removing cassettes, make a backup!
