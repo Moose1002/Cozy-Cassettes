@@ -20,6 +20,7 @@ unit_size = 8.0
 max_distance = 40.0
 
 [node name="Interactable" type="Area" parent="."]
+monitoring = false
 script = ExtResource( 2 )
 
 [node name="CollisionShape" type="CollisionShape" parent="Interactable"]

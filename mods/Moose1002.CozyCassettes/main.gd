@@ -8,6 +8,15 @@ const MOD_ID = "Moose1002.CozyCassettes"
 const PREFIX = "[CozyCassettes]: "
 #const CASSETTE_DIR = "res://mods/Moose1002.CozyCassettes/Cassettes/"
 var CASSETTE_DIR = OS.get_executable_path().get_base_dir() + "/Cassettes/"
+var AUDIO_STREAM_DIR = OS.get_executable_path().get_base_dir() + "/GDWeave/mods/Moose1002.CozyCassettes/audio_stream.dll"
+
+# AudioStream variables
+const SAMPLE_HZ = 44100.0 
+
+var YTStream = null
+var node = null
+var _yt_stream
+var _generator
 
 # TODO: Get .wav working
 const VALID_FILE_TYPES = ["mp3", "ogg", "png"]
@@ -20,20 +29,20 @@ const TAPE_JSON_DICT = {
 onready var Lure = get_node("/root/SulayreLure")
 
 # Returns the path to the provided cassette's song directory
-func load_cassette_dir(cassette_id: String):
+func load_media_dir(cassette_id: String, directory: String):
 	var dir = Directory.new()
-	dir.open(CASSETTE_DIR)
+	dir.open(directory)
 	dir.list_dir_begin()
 	
 	var dir_name = dir.get_next()
 	while dir_name != "":
-		if (dir_name.to_lower().replace(" ", "_") + "_tape" == cassette_id):
-			return CASSETTE_DIR + dir_name
+		if (dir_name.to_lower().replace(" ", "_") + "_tape" == cassette_id or dir_name.to_lower().replace(" ", "_") + "_vhs" == cassette_id):
+			return directory + dir_name
 		dir_name = dir.get_next()
 	return ""	
 
 # Returns an array of all song file paths in a directory
-func get_song_files(path: String):
+func get_media_files(path: String, file_types):
 	var song_files = []
 	var dir = Directory.new()
 	
@@ -45,7 +54,7 @@ func get_song_files(path: String):
 		if (song_file_name.begins_with(".") or song_file_name.ends_with(".import") or song_file_name == "tape.json"):
 			song_file_name = dir.get_next()	
 			continue
-		elif (VALID_FILE_TYPES.find(song_file_name.get_extension()) == -1):
+		elif (file_types.find(song_file_name.get_extension()) == -1):
 			print(PREFIX + "Invalid file type found: " + song_file_name)
 			song_file_name = dir.get_next()	
 			continue
@@ -55,7 +64,11 @@ func get_song_files(path: String):
 
 # Returns a readable string from the cassette id
 func format_cassette_id(cassette_id: String):
-	var formatted_cassetted_id = cassette_id.trim_suffix("_tape").capitalize()
+	var formatted_cassetted_id = ""
+	if (cassette_id.ends_with("_tape")):
+		formatted_cassetted_id = cassette_id.trim_suffix("_tape").capitalize()
+	elif (cassette_id.ends_with("_vhs")):
+		formatted_cassetted_id = cassette_id.trim_suffix("_vhs").capitalize()
 	return formatted_cassetted_id
 
 # This updates old json files that might be missing field.
@@ -64,7 +77,7 @@ func _update_json(cassette_id: String, cassette_tape_data: Dictionary):
 	print(PREFIX + "Old tape.json found, attemping update.")
 	
 	var json = File.new()
-	var json_dir = load_cassette_dir(cassette_id) + "/tape.json"
+	var json_dir = load_media_dir(cassette_id, CASSETTE_DIR) + "/tape.json"
 	json.open(json_dir, File.WRITE)
 	
 	var json_dict = TAPE_JSON_DICT
@@ -81,9 +94,9 @@ func _update_json(cassette_id: String, cassette_tape_data: Dictionary):
 # Process the tape.json data for the provided cassette tape
 # If tape.json exists returns the tape's data dictionary
 # If tape.json doesn't exist creates it
-func load_cassette_json(cassette_id: String):
+func load_cassette_json(cassette_id: String, directory: String, json_dictionary: Dictionary):
 	var json = File.new()
-	var json_dir = load_cassette_dir(cassette_id) + "/tape.json"
+	var json_dir = load_media_dir(cassette_id, directory) + "/tape.json"
 	
 	# If the file already exists read and return the data
 	if (json.file_exists(json_dir)):	
@@ -99,7 +112,7 @@ func load_cassette_json(cassette_id: String):
 	else:
 		print(PREFIX + "tape.json not found for " + cassette_id + ". Creating it!")
 		json.open(json_dir, File.WRITE)
-		var json_dict = TAPE_JSON_DICT
+		var json_dict = json_dictionary
 		
 		json_dict["name"] = format_cassette_id(cassette_id)
 		json.store_string(JSON.print(json_dict, "\t"))
@@ -173,6 +186,9 @@ func _set_custom_cassette_texture(cassette_id: String, custom_texture: String):
 	# Can't set this to an Image directly so we create a ImageTexture
 	Globals.item_data[MOD_ID + "." + cassette_id]["file"].icon = texture
 
+func _walkman_action():
+	print("Action triggered")
+
 # Build cassette items from the Cassettes folder
 func _build_cassettes():
 	var dir = Directory.new()
@@ -187,13 +203,13 @@ func _build_cassettes():
 		cassette_id = cassette_id.to_lower().replace(" ", "_") + "_tape"
 	
 		# This calls to create tape.json if it doesn't already exist
-		var cassette_data = load_cassette_json(cassette_id)
+		var cassette_data = load_cassette_json(cassette_id, CASSETTE_DIR, TAPE_JSON_DICT)
 		# Update old jsons with new fields
 		if (!cassette_data.has("description")):
 			cassette_data = _update_json(cassette_id, cassette_data)
 		
 		var cassette_resource = _get_cassette_tape_resource(cassette_data)
-		var custom_resource = load_cassette_dir(cassette_id) + "/tape.png"
+		var custom_resource = load_media_dir(cassette_id, CASSETTE_DIR) + "/tape.png"
 		
 		## Register Cassette Tape ##
 		print(PREFIX + "Registering Cassette with ID: " + cassette_id)
@@ -213,7 +229,60 @@ func _build_cassettes():
 			
 		cassette_dir = dir.get_next()
 
+func make_generator(audio_player):
+	var generator = AudioStreamGenerator.new()
+	generator.buffer_length = 1
+	audio_player.stream = generator
+
+# Huge shoutout to ThePotato for their work on GodotAudioStream and Potato Radio.
+# The following code is adapted from their work.
+
+func get_loaded_song_metadata():
+	return _yt_stream.get_current_playback_metadata()
+
+func get_loaded_song_playback_position():
+	return _yt_stream.get_playback_position()
+
+func load_stream_url(url: String, audio_player):
+	#if id != _current_radio: return
+	if _yt_stream:
+		_yt_stream.stop()
+		make_generator(audio_player)
+		var playback = audio_player.get_stream_playback()
+		_yt_stream.set_player(audio_player)
+		_yt_stream.set_audio_stream(playback)
+		_yt_stream.play_youtube_audio(url)
+
+func _initilaize_yt_stream():
+	
+	var lib = GDNativeLibrary.new()
+	var cfg = ConfigFile.new()
+
+	cfg.set_value("entry", "Windows.64", AUDIO_STREAM_DIR)
+	lib.config_file = cfg
+
+	var script = NativeScript.new()
+	script.library = lib
+	script.resource_name = "ytstream"
+	script.set_class_name("YTStream")
+
+	_yt_stream = Node.new()
+	self.add_child(_yt_stream)
+	_yt_stream.set_script(script)
+	
+	# If the user has used PotatoRadio in the past just use the aleady downloaded tools
+	# If they haven't store them in CozyCassettes to avoid confusion
+	var yt_stream_dir = Directory.new()
+	if yt_stream_dir.dir_exists(OS.get_user_data_dir() + "/PotatoRadio/"):
+		_yt_stream.set_root_path(OS.get_user_data_dir() + "/PotatoRadio/")
+	else:
+		_yt_stream.set_root_path(OS.get_user_data_dir() + "/CozyCassettes/")
+
 func _ready():
+
+	print("test")
+	print(AUDIO_STREAM_DIR)
+
 	var cassette_dir = Directory.new()
 	if (not cassette_dir.dir_exists(CASSETTE_DIR)):
 		print(PREFIX + "Cassette folder not found. Creating one!")
@@ -222,7 +291,11 @@ func _ready():
 		_build_cassettes()
 		Lure.add_content(MOD_ID, "prop_tape_boombox", "mod://Scenes/prop_tape_boombox.tres", [Lure.FLAGS.FREE_UNLOCK])
 		Lure.add_actor(MOD_ID, "prop_tape_boombox", "mod://Scenes/prop_tape_boombox.tscn")
-	
+		Lure.add_content(MOD_ID, "youtube_tape", "mod://Tapes/Resources/tape_fishtube.tres", [Lure.FLAGS.FREE_UNLOCK])
+		#Lure.register_action(MOD_ID, "walkman_interact", self, "_walkman_action")
+		#Lure.add_content(MOD_ID, "item_walkman", "mod://Walkman/walkman.tres", [Lure.FLAGS.FREE_UNLOCK])
+		
+	_initilaize_yt_stream()
 	print(PREFIX + "CozyCassettes Loaded!")
 	
 #GDScriptAudioImport v0.1
